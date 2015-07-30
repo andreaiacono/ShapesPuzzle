@@ -29,19 +29,20 @@ class GeometricPuzzleFrame(wx.Frame):
 
         menu_bar.Append(menu_about, "&About")
 
-        self.puzzle = puzzle.Puzzle("../models/simple.model")
+        self.puzzle = puzzle.Puzzle("../models/default.model")
         self.SetMenuBar(menu_bar)
         self.CreateStatusBar()
         self.SetStatusText("Ready")
 
         self.box_width = 0
         self.box_height = 0
-        self.rows = 4
-        self.cols = 4
+        self.rows = len(self.puzzle.get_model()[0])
+        self.cols = self.rows
         self.grid_size = 0
         self.window_width = 0
         self.window_height = 0
         self.left = 0
+        self.top = 0
         self.border = 0
         self.vertices = []
 
@@ -51,8 +52,13 @@ class GeometricPuzzleFrame(wx.Frame):
     def refresh_window(self):
         dc = wx.PaintDC(self)
         dc.BeginDrawing
+        dc.SetBrush(wx.Brush(wx.LIGHT_GREY))
+        dc.SetPen(wx.Pen(wx.LIGHT_GREY, 1))
         dc.DrawRectangle(0, 0, self.window_width, self.window_height)
 
+        dc.SetPen(wx.Pen(wx.BLACK, 1))
+
+        # grid
         # dc.SetPen(wx.Pen(wx.LIGHT_GREY, 1))
         # for row in range(self.rows):
         #     dc.DrawLine(self.vertices[0].x, self.vertices[0].y + self.grid_size * row, self.vertices[1].x,
@@ -61,22 +67,20 @@ class GeometricPuzzleFrame(wx.Frame):
         # for col in range(self.cols):
         #     dc.DrawLine(self.vertices[0].x + self.grid_size * col, self.vertices[0].y,
         #                 self.vertices[0].x + self.grid_size * col, self.vertices[2].y)
-
         # dc.SetPen(wx.Pen(wx.BLACK, 1))
         # dc.DrawLines(self.vertices)
-        self.draw_puzzle(dc, self.puzzle)
 
+        self.draw_puzzle(dc, self.puzzle)
 
     def draw_puzzle(self, dc, puzzle):
 
         model = puzzle.get_model()
         for row in range(len(model)):
             for col in range(len(model[row])):
-                index = 100 + puzzle.get_color_index(str(model[row][col])) * 25
-                dc.SetBrush(wx.Brush(getColourList()[index]))
-                dc.DrawRectangle(self.left + self.border + row * self.grid_size, self.top + self.border + col * self.grid_size, self.grid_size, self.grid_size)
-                print model[row][col]
-
+                color_index = puzzle.get_color_index(model[row][col]) * 21
+                dc.SetBrush(wx.Brush(getColourList()[color_index]))
+                dc.DrawRectangle(self.left + row * self.grid_size, self.top + col * self.grid_size, self.grid_size, self.grid_size)
+                # dc.DrawLines(self.vertices)
 
     def on_paint(self, event):
         self.refresh_window()
@@ -86,32 +90,31 @@ class GeometricPuzzleFrame(wx.Frame):
         self.refresh_window()
 
     def compute_size(self):
-        border = 25
-        width, height = self.GetSizeTuple()
-        ratio = self.rows / float(self.cols)
+        border = 20
+        width, height = self.GetClientSizeTuple()
+        # ratio = self.rows / float(self.cols)
 
-        if width * ratio >= height:
+        if width >= height:
             self.left = (width - height + border) / 2
             self.top = border
-            upper_left = wx.Point(self.left + border, border)
-            upper_right = wx.Point(height - border, border)
-            lower_left = wx.Point(self.left + border, height - self.left - border)
-            lower_right = wx.Point(height - border, height - self.left - border)
+            upper_left = wx.Point(self.left, self.top)
+            upper_right = wx.Point(self.left + height - border*2, self.top)
+            lower_left = wx.Point(self.left, height - self.top)
+            lower_right = wx.Point(self.left + height - border*2, height - self.top)
         else:
             self.left = border
             self.top = (height - width + border) / 2
-            upper_left = wx.Point(border, self.top)
-            upper_right = wx.Point(width - border, self.top)
-            lower_left = wx.Point(border, height - self.top - border)
-            lower_right = wx.Point(width - border, height - self.top - border)
+            upper_left = wx.Point(self.left, self.top)
+            upper_right = wx.Point(width - self.left, self.top)
+            lower_left = wx.Point(self.left, height - self.top - self.left)
+            lower_right = wx.Point(width - self.left, height - self.top - self.left)
 
         self.window_width = width
         self.window_height = height
         self.box_width = upper_right.x - upper_left.x
-        self.box_height = upper_left.y - lower_left.y
+        self.box_height = lower_left.y - upper_left.y
         self.vertices = [upper_left, upper_right, lower_right, lower_left, upper_left]
         self.grid_size = self.box_width / self.cols
-
 
     def on_info(self, event):
 
@@ -131,12 +134,12 @@ Suite 330, Boston, MA  02111-1307  USA"""
 
         info = wx.AboutDialogInfo()
 
-        info.SetIcon(wx.Icon('puzzle.png', wx.BITMAP_TYPE_PNG))
+        info.SetIcon(wx.Icon('../img/puzzle.png', wx.BITMAP_TYPE_PNG))
         info.SetName('GeometricPuzzles')
         info.SetVersion('1.0')
-        info.SetDescription("GeometricPuzzles is a solver")
-        info.SetCopyright('(C) 2014 Andrea Iacono')
-        info.SetWebSite('http://www.github.com/andreaiacono')
+        info.SetDescription("GeometricPuzzles is a solver for geometric puzzles.")
+        info.SetCopyright('Written by Andrea Iacono')
+        info.SetWebSite('http://www.github.com/andreaiacono/GeometricPuzzels')
         info.SetLicence(licence)
         info.AddDeveloper('Andrea Iacono')
         info.AddDocWriter('Andrea Iacono')
@@ -149,14 +152,7 @@ class GeometricPuzzleApplication(wx.App):
         frame = GeometricPuzzleFrame()
         frame.Show(True)
         self.SetTopWindow(frame)
-        # self.SetSize(800, 600)
         return True
-
-
-colors = []
-
-for i in range(255):
-    colors.append('%06X' % randint(0, 0xFFFFFF))
 
 app = GeometricPuzzleApplication()
 app.MainLoop()

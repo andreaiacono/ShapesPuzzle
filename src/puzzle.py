@@ -1,39 +1,36 @@
 __author__ = 'andrea'
+import piece
 
 
-class Puzzle():
+class Puzzle:
     def __init__(self, filename):
         self.matrix = []
         self.placeholders = []
         self.rows = 0
         self.cols = 0
+        self.pieces = []
         self.load(filename)
 
     def load(self, filename):
-        lines = open(filename)
         self.rows = 0
         self.cols = 0
-        row_length = -1
-        for line in lines:
-            if row_length == -1:
-                row_length = len(line) - 1
+        self.matrix = [map(str, list(line.replace('\n', ''))) for line in open(filename, 'r') if line.strip() != '']
 
-            if len(line) - 1 != row_length:
-                print "ERROR: different lengths"
-            if line[0] == '\n':
-                continue
-            row = []
-            for col in line:
-                if col == '\n':
-                    continue
-                row.append(col)
+        for row in self.matrix:
+            for col in row:
                 if col not in self.placeholders:
+                    self.pieces.append(self.get_new_piece(col))
                     self.placeholders.append(col)
-            self.matrix.append(row)
 
-        self.rows = len(self.matrix)
-        print row_length
-        print self.matrix
+    def get_new_piece(self, value):
+
+        piece_positions = []
+        for row_idx, row in enumerate(self.matrix):
+            for col_idx, col in enumerate(row):
+                if col == value:
+                    piece_positions.append((row_idx, col_idx))
+
+        self.pieces.append(piece.Piece(piece_positions))
 
     def get_model(self):
         return self.matrix
@@ -46,4 +43,3 @@ class Puzzle():
             if element == self.placeholders[i]:
                 return i
         return 0
-
