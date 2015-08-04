@@ -33,6 +33,10 @@ class GeometricPuzzleFrame(wx.Frame):
         menu_bar = wx.MenuBar()
         file_menu = wx.Menu()
 
+        id_open = wx.NewId()
+        file_menu.Append(id_open, "&Open", "Open model")
+        wx.EVT_MENU(self, id_open, self.loadFile)
+
         id_quit = wx.NewId()
         file_menu.Append(id_quit, "&Quit", "Quit Solver")
         wx.EVT_MENU(self, id_quit, self.on_quit)
@@ -55,6 +59,14 @@ class GeometricPuzzleFrame(wx.Frame):
         self.SetMenuBar(menu_bar)
         self.CreateStatusBar()
         self.SetStatusText("Ready")
+
+    def loadFile(self, event):
+        openFileDialog = wx.FileDialog(self, "Open", "", "", "Python files (*.model)|*.model", wx.FD_OPEN | wx.FD_FILE_MUST_EXIST)
+        openFileDialog.ShowModal()
+        filename = openFileDialog.GetPath()
+        openFileDialog.Destroy()
+        self.puzzle = puzzle.Puzzle(filename)
+        self.refresh_window()
 
     def next_solution(self, event):
         self.solver.next()
