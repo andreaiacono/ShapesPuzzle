@@ -36,7 +36,7 @@ class Puzzle:
                         first_step = False
                     piece_positions.append((row_idx - starting_position[0], col_idx - starting_position[1]))
 
-        self.pieces.append(piece.Piece(piece_positions))
+        return piece.Piece(piece_positions)
 
     def get_model(self):
         return self.matrix
