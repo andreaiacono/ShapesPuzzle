@@ -21,16 +21,22 @@ class Puzzle:
                 if col not in self.placeholders:
                     self.pieces.append(self.get_new_piece(col))
                     self.placeholders.append(col)
+                self.cols += 1
+            self.rows += 1
 
     def get_new_piece(self, value):
-
+        first_step = True
         piece_positions = []
+        starting_position = 0,0
         for row_idx, row in enumerate(self.matrix):
             for col_idx, col in enumerate(row):
                 if col == value:
-                    piece_positions.append((row_idx, col_idx))
+                    if first_step:
+                        starting_position = (row_idx, col_idx)
+                        first_step = False
+                    piece_positions.append((row_idx - starting_position[0], col_idx - starting_position[1]))
 
-        self.pieces.append(piece.Piece(piece_positions))
+        return piece.Piece(piece_positions)
 
     def get_model(self):
         return self.matrix
