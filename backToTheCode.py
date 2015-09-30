@@ -1,10 +1,13 @@
 import sys
 import random
-import operator
 
 
 class Directions:
     NW, N, NE, W, E, SW, S, SE = range(8)
+    CARDINALS = [N, S, E, W]
+    INTERCARDINALS = [NW, NE, SW, SE]
+    VERTICALS = [N, S]
+    HORIZONTALS = [E, W]
 
 
 def get_random_direction():
@@ -12,7 +15,7 @@ def get_random_direction():
 
 
 # the arena
-m = [['.' for i in range(35)] for j in range(20)]
+m = [['.' for i in range(20)] for j in range(35)]
 
 # the arenas at evey round of the game (BackInTime)
 # key is the step number, value is the arena
@@ -27,6 +30,12 @@ current_dest = 0
 
 # feel the corner
 feel_the_corner = 3
+
+# my points
+points = 0
+
+# my use of BIT feature
+has_used_back_in_time = False
 
 
 def manhattan_distance(x1, y1, x2, y2):
@@ -44,7 +53,7 @@ def is_area_free(x1, y1, step1, step2):
         y2 = step2[1]
 
     if x1 == x2 and y1 == y2:
-        return m[y1][x1] != '.'
+        return m[x1][y1] != '.'
 
     print >> sys.stderr, "Checking area x1:", x1, " y1:", y1, " x2:", x2, " y2:", y2
     step_x = +1 if x1 < x2 else -1
@@ -53,8 +62,8 @@ def is_area_free(x1, y1, step1, step2):
     for x in range(x1, x2, step_x):
         for y in range(y1, y2, step_y):
             print >> sys.stderr, "Area free. Checking x:", x, " y:", y
-            if m[y][x] != '.':
-                print >> sys.stderr, "Area not free. x:", x, " y:", y, " m:", m[y][x]
+            if m[x][y] != '.':
+                print >> sys.stderr, "Area not free. x:", x, " y:", y, " m:", m[x][y]
                 return False
 
     print >> sys.stderr, "Area x1:", x1, " y1:", y1, " x2:", x2, " y2:", y2, " is free."
@@ -152,42 +161,6 @@ def get_coordinates_from_direction(x, y, direction, size):
     return step1, step2
 
 
-def get_most_free_area_coords(x, y):
-    areas = {}
-    for i in range(4):
-        for j in range(7):
-            occupied_cells = 0
-            for k in range(5):
-                for l in range(5):
-                    # print >> sys.stderr, "(", (i * 5 + k), "," , (j * 5 + l), ")"
-                    if m[i * 5 + k][j * 5 + l] != '.':
-                        occupied_cells += 1
-            areas[(i, j)] = occupied_cells
-            print >> sys.stderr, "areas(", i, ",", j, "):", occupied_cells
-
-    # searches the areas with less occupied cells
-    area_density = 999
-    for k in areas.keys():
-        print >> sys.stderr, "area(", k, ") = ", areas[k]
-        if areas[k] < area_density:
-            area_density = areas[k]
-
-    # gets the closest of these areas
-    min_distance = 999
-    index = 0
-    myx = x % 5
-    myy = y % 5
-    for k in areas.keys():
-        if areas[k] == area_density:
-            distance = abs(myx - k[0]) + abs(myy - k[1])
-            if min_distance > distance:
-                min_distance = distance
-                index = k
-
-    print >> sys.stderr, "going to area ", index
-    return index[1] * 5 + 2, index[0] * 5 + 2
-
-
 def get_best_direction(x, y, ox, oy):
     """
     returns the best Direction to go to, given the player coords (x, y)
@@ -265,6 +238,131 @@ def get_escape_direction_from_edge(x, y):
     return direction
 
 
+def get_most_free_area_coords(x, y):
+    areas = {}
+    for i in range(7):
+        for j in range(4):
+            occupied_cells = 0
+            for k in range(5):
+                for l in range(5):
+                    # print >> sys.stderr, "(", (i * 5 + k), "," , (j * 5 + l), ")"
+                    if m[i * 5 + k][j * 5 + l] != '.':
+                        occupied_cells += 1
+            areas[(i, j)] = occupied_cells
+            print >> sys.stderr, "areas(", i, ",", j, "):", occupied_cells
+
+    # searches the areas with less occupied cells
+    area_density = 999
+    for k in areas.keys():
+        print >> sys.stderr, "area(", k, ") = ", areas[k]
+        if areas[k] < area_density:
+            area_density = areas[k]
+
+    # gets the closest of these areas
+    min_distance = 999
+    index = 0
+    myx = x % 5
+    myy = y % 5
+    for k in areas.keys():
+        if areas[k] == area_density:
+            distance = abs(myx - k[0]) + abs(myy - k[1])
+            if min_distance > distance:
+                min_distance = distance
+                index = k
+
+    print >> sys.stderr, "going to area ", index
+    return index[1] * 5 + 2, index[0] * 5 + 2
+
+
+def get_best_free_square_in_direction(x, y, direction, size):
+    best_n = 0
+    print "direction=", direction
+    if direction in Directions.VERTICALS:
+        for n in range(1, size):
+            print n
+            for ds in range(n + 1):
+                ndx = ds
+                if direction == Directions.N:
+                    ndx = -ds
+                print (x + n, y + ndx), " x=", x, " n=", n, " ds=", ds, " SU DS"
+                print (x - n, y + ndx), " x=", x, " n=", n, " ds=", ds, " SU DS"
+                if m[x + n][y + ndx] != '.' or m[x - n][y + ndx] != '.':
+                    best_n = n - 1
+            nv = n
+            if direction == Directions.N:
+                nv = -n
+            for df in range(-n + 1, n):
+                print (x + df, y + nv), " y=", y, " n=", n, " ndy=", ndy, " nv=", nv, " SU DF"
+                if m[x + df][y + nv] != '.':
+                    best_n = n - 1
+
+            # we got the max square and return it
+            if best_n > 0:
+                step1 = x + best_n, y
+                step2 = x - best_n, y + best_n if direction == Directions.S else y - best_n
+                return step1, step2
+
+    if direction in Directions.HORIZONTALS:
+        for n in range(1, size):
+            print n
+            for ds in range(n + 1):
+                ndx = ds
+                if direction == Directions.W:
+                    ndx = -ds
+                print (x + ndx, y + n), " x=", x, " n=", n, " ds=", ds, " SU DS"
+                print (x + ndx, y - n), " x=", x, " n=", n, " ds=", ds, " SU DS"
+                if m[x + ndx][y + n] != '.' or m[x + ndx][y - n] != '.':
+                    best_n = n - 1
+
+            nv = n
+            if direction == Directions.W:
+                nv = -n
+            for df in range(-n + 1, n):
+                print (x + nv, y + df), " y=", y, " n=", n, " ndy=", ndy, " nv=", nv, " SU DF"
+                if m[x + nv][y + df] != '.':
+                    best_n = n - 1
+
+            # we got the max square and return it
+            if best_n > 0:
+                step1 = x, y + best_n
+                step2 = x + best_n if direction == Directions.E else x - best_n, y - best_n
+                return step1, step2
+
+    if direction in Directions.INTERCARDINALS:
+        for n in range(1, size):
+            print n
+            nv = n
+            if direction == Directions.NW or direction == Directions.SW:
+                nv = -n
+            for dx in range(n + 1):
+                ndx = dx
+                if direction == Directions.NW or direction == Directions.NE:
+                    ndx = -dx
+                print (x + nv, y + ndx), " x=", x, " n=", n, " ndx=", ndx, " nv=", nv
+                if m[x + nv][y + ndx] != '.':
+                    best_n = n - 1
+
+            nv = n
+            if direction == Directions.NW or direction == Directions.NE:
+                nv = -n
+            for dy in range(n):
+                ndy = dy
+                if direction == Directions.NW or direction == Directions.SW:
+                    ndy = -dy
+                print (x + ndy, y + nv), " y=", y, " n=", n, " ndy=", ndy, " nv=", nv
+                if m[x + ndy][y + nv] != '.':
+                    best_n = n - 1
+
+            if best_n > 0:
+                dx = best_n if direction == Directions.NE or direction==Directions.SE else -best_n
+                dy = best_n if direction == Directions.SE or direction==Directions.SW else -best_n
+                step1 = x + dx, y + dy
+                return step1
+
+    print >> sys.stderr, "should really not be here "
+    return
+
+
 def find_new_area(x, y, closest_opponent, size, destinations):
     # TODO quando piu' di meta' dell'arena e' occupata, non cerco piu' di stare lontano degli avversari, ma mi butto sulle tracce libere
 
@@ -277,6 +375,7 @@ def find_new_area(x, y, closest_opponent, size, destinations):
             or y <= feel_the_corner or y > 19 - feel_the_corner:
         escaping = True
         direction = get_escape_direction_from_edge(x, y)
+        print >> sys.stderr, "feeling in the corner: escaping to direction "
 
     while True:
 
@@ -302,17 +401,24 @@ def find_new_area(x, y, closest_opponent, size, destinations):
         if size == 2:
 
             # we retry going away, starting with a normal square
+            print >> sys.stderr, "no more room in this area. Trying something else"
             size = 5
+
 
             # we'll go away
             while True:
                 x, y = move_to_direction(x, y, direction)
+                print >> sys.stderr, "Tyring from ", x, ",", y
+
                 if x is None:
                     step1 = get_most_free_area_coords(x, y)
+                    print >> sys.stderr, "x,y out of bounds. Going to ", step1, " instead."
                     return append_destinations(step1, None, (x, y), destinations)
                 else:
                     step1, step2 = get_coordinates_from_direction(x, y, direction, size)
+                    print >> sys.stderr, "x,y was a good choice. Checking ", step1, ", ", step2, " instead."
                     if is_area_free(x, y, step1, step2):
+                        print >> sys.stderr, "That was good. Going there."
                         return append_destinations(step1, step2, (x, y), destinations)
 
         print >> sys.stderr, "Area (", x, ",", y, ") - ", step1, " - ", step2, " is not free. Reducing size to ", size
@@ -335,8 +441,8 @@ def next_dests(x, y, opps, destinations):
 
     # se ci sono due opps alla stessa distanza, prendo un random
 
-
-    size = distance / 4
+    # super conservative size: it takes care of an opponent going straight to us
+    size = max(3, distance / 8)
     return find_new_area(x, y, closest_opponent, size, destinations)
 
 
@@ -356,18 +462,26 @@ while 1:
 
     # quando rimangono poche celle libere, vado diretto su quelle
 
+    # FIXME!!!
+    # vado avanti a creare rettangolo fino a che la distanza del piu' vicino non mi impedisce di chiuderlo
+    # all'inizio cerco di farlo un po' piu' grande e se qualcuno me lo rompe prima (arrivato alla conclusione
+    # non ho l'incremento atteso) faccio un back in time (max 25 round)
+
     # reads the actual state of the arena
     for i in xrange(20):
         row = raw_input()
         for j in range(34):
-            m[i][j] = row[j]
+            p = row[j]
+            m[j][i] = p
+            if m[j][i] == '0':
+                points += 1
 
     grid = ''
-    for i in xrange(20):
-        for j in range(34):
+    for i in range(34):
+        for j in xrange(20):
             grid += m[i][j]
         grid += '\n'
-    print >> sys.stderr, grid
+    # print >> sys.stderr, grid
 
     # updates the BIT
     bit[game_round] = [row[:] for row in m]
