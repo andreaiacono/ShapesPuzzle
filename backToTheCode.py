@@ -276,41 +276,44 @@ def get_most_free_area_coords(x, y):
 
 def get_best_free_square_in_direction(x, y, direction, size):
     best_n = 0
-    print "direction=", direction
+
     if direction in Directions.VERTICALS:
         for n in range(1, size):
-            print n
+            print >> sys.stderr, "n=",n
             for ds in range(n + 1):
                 ndx = ds
                 if direction == Directions.N:
                     ndx = -ds
-                print (x + n, y + ndx), " x=", x, " n=", n, " ds=", ds, " SU DS"
-                print (x - n, y + ndx), " x=", x, " n=", n, " ds=", ds, " SU DS"
+                print >> sys.stderr, (x + n, y + ndx), " x=", x, " n=", n, " ds=", ds, " SU DS"
+                print >> sys.stderr, (x - n, y + ndx), " x=", x, " n=", n, " ds=", ds, " SU DS"
                 if m[x + n][y + ndx] != '.' or m[x - n][y + ndx] != '.':
                     best_n = n - 1
             nv = n
             if direction == Directions.N:
                 nv = -n
             for df in range(-n + 1, n):
-                print (x + df, y + nv), " y=", y, " n=", n, " ndy=", ndy, " nv=", nv, " SU DF"
+                print >> sys.stderr, (x + df, y + nv), " y=", y, " n=", n, " nv=", nv, " SU DF"
                 if m[x + df][y + nv] != '.':
                     best_n = n - 1
 
-            # we got the max square and return it
+            # we got the max square
             if best_n > 0:
-                step1 = x + best_n, y
-                step2 = x - best_n, y + best_n if direction == Directions.S else y - best_n
-                return step1, step2
+                n = best_n
+                break
+            
+        step1 = x + n, y
+        step2 = x - n, y + n if direction == Directions.S else y - n
+        return step1, step2
 
     if direction in Directions.HORIZONTALS:
         for n in range(1, size):
-            print n
+            print >> sys.stderr, "n=", n
             for ds in range(n + 1):
                 ndx = ds
                 if direction == Directions.W:
                     ndx = -ds
-                print (x + ndx, y + n), " x=", x, " n=", n, " ds=", ds, " SU DS"
-                print (x + ndx, y - n), " x=", x, " n=", n, " ds=", ds, " SU DS"
+                print >> sys.stderr, (x + ndx, y + n), " x=", x, " n=", n, " ds=", ds, " SU DS"
+                print >> sys.stderr, (x + ndx, y - n), " x=", x, " n=", n, " ds=", ds, " SU DS"
                 if m[x + ndx][y + n] != '.' or m[x + ndx][y - n] != '.':
                     best_n = n - 1
 
@@ -318,19 +321,22 @@ def get_best_free_square_in_direction(x, y, direction, size):
             if direction == Directions.W:
                 nv = -n
             for df in range(-n + 1, n):
-                print (x + nv, y + df), " y=", y, " n=", n, " ndy=", ndy, " nv=", nv, " SU DF"
+                print >> sys.stderr, (x + nv, y + df), " y=", y, " n=", n, " nv=", nv, " SU DF"
                 if m[x + nv][y + df] != '.':
                     best_n = n - 1
 
             # we got the max square and return it
             if best_n > 0:
-                step1 = x, y + best_n
-                step2 = x + best_n if direction == Directions.E else x - best_n, y - best_n
-                return step1, step2
+                n = best_n
+                break
+            
+        step1 = x, y + n
+        step2 = x + n if direction == Directions.E else x - n, y - n
+        return step1, step2
 
     if direction in Directions.INTERCARDINALS:
         for n in range(1, size):
-            print n
+            print >> sys.stderr, "n=", n
             nv = n
             if direction == Directions.NW or direction == Directions.SW:
                 nv = -n
@@ -338,7 +344,7 @@ def get_best_free_square_in_direction(x, y, direction, size):
                 ndx = dx
                 if direction == Directions.NW or direction == Directions.NE:
                     ndx = -dx
-                print (x + nv, y + ndx), " x=", x, " n=", n, " ndx=", ndx, " nv=", nv
+                print >> sys.stderr, (x + nv, y + ndx), " x=", x, " n=", n, " ndx=", ndx, " nv=", nv
                 if m[x + nv][y + ndx] != '.':
                     best_n = n - 1
 
@@ -349,15 +355,18 @@ def get_best_free_square_in_direction(x, y, direction, size):
                 ndy = dy
                 if direction == Directions.NW or direction == Directions.SW:
                     ndy = -dy
-                print (x + ndy, y + nv), " y=", y, " n=", n, " ndy=", ndy, " nv=", nv
+                print >> sys.stderr, (x + ndy, y + nv), " y=", y, " n=", n, " ndy=", ndy, " nv=", nv
                 if m[x + ndy][y + nv] != '.':
                     best_n = n - 1
 
             if best_n > 0:
-                dx = best_n if direction == Directions.NE or direction==Directions.SE else -best_n
-                dy = best_n if direction == Directions.SE or direction==Directions.SW else -best_n
-                step1 = x + dx, y + dy
-                return step1
+                n = best_n
+                break
+            
+        dx = n if direction == Directions.NE or direction==Directions.SE else -n
+        dy = n if direction == Directions.SE or direction==Directions.SW else -n
+        step1 = x + dx, y + dy
+        return step1, None
 
     print >> sys.stderr, "should really not be here "
     return
@@ -377,53 +386,54 @@ def find_new_area(x, y, closest_opponent, size, destinations):
         direction = get_escape_direction_from_edge(x, y)
         print >> sys.stderr, "feeling in the corner: escaping to direction "
 
-    while True:
+    # while True:
 
-        # TODO fix on the edge
-        # if we're on the edge, we just go for a straight line
-        #        if x == 0 or x == 34 or y == 0 or y == 19:
-        #            destinations.append(step1)
+    # TODO fix on the edge
+    # if we're on the edge, we just go for a straight line
+    #        if x == 0 or x == 34 or y == 0 or y == 19:
+    #            destinations.append(step1)
 
-        # if we're not close to an edge, gets the new coordinates where to go
-        if not escaping:
-            direction = get_best_direction(x, y, ox, oy)
+    # if we're not close to an edge, gets the new coordinates where to go
+    if not escaping:
+        direction = get_best_direction(x, y, ox, oy)
 
-        step1, step2 = get_coordinates_from_direction(x, y, direction, size)
+    step1, step2 = get_best_free_square_in_direction(x, y, direction, size)
+    return append_destinations(step1, step2, (x, y), destinations)
 
         # if the new area is free, it's ok
-        if is_area_free(x, y, step1, step2):
-            break
+        # if is_area_free(x, y, step1, step2):
+        #     break
 
         # if it's not good, we try to make a smaller square
-        size -= 1
-
-        # if there's no room, even with smaller squares
-        if size == 2:
-
-            # we retry going away, starting with a normal square
-            print >> sys.stderr, "no more room in this area. Trying something else"
-            size = 5
-
-
-            # we'll go away
-            while True:
-                x, y = move_to_direction(x, y, direction)
-                print >> sys.stderr, "Tyring from ", x, ",", y
-
-                if x is None:
-                    step1 = get_most_free_area_coords(x, y)
-                    print >> sys.stderr, "x,y out of bounds. Going to ", step1, " instead."
-                    return append_destinations(step1, None, (x, y), destinations)
-                else:
-                    step1, step2 = get_coordinates_from_direction(x, y, direction, size)
-                    print >> sys.stderr, "x,y was a good choice. Checking ", step1, ", ", step2, " instead."
-                    if is_area_free(x, y, step1, step2):
-                        print >> sys.stderr, "That was good. Going there."
-                        return append_destinations(step1, step2, (x, y), destinations)
-
-        print >> sys.stderr, "Area (", x, ",", y, ") - ", step1, " - ", step2, " is not free. Reducing size to ", size
-
-    return append_destinations(step1, step2, (x, y), destinations)
+    #     size -= 1
+    #
+    #     # if there's no room, even with smaller squares
+    #     if size == 2:
+    #
+    #         # we retry going away, starting with a normal square
+    #         print >> sys.stderr, "no more room in this area. Trying something else"
+    #         size = 5
+    #
+    #
+    #         # we'll go away
+    #         while True:
+    #             x, y = move_to_direction(x, y, direction)
+    #             print >> sys.stderr, "Tyring from ", x, ",", y
+    #
+    #             if x is None:
+    #                 step1 = get_most_free_area_coords(x, y)
+    #                 print >> sys.stderr, "x,y out of bounds. Going to ", step1, " instead."
+    #                 return append_destinations(step1, None, (x, y), destinations)
+    #             else:
+    #                 step1, step2 = get_coordinates_from_direction(x, y, direction, size)
+    #                 print >> sys.stderr, "x,y was a good choice. Checking ", step1, ", ", step2, " instead."
+    #                 if is_area_free(x, y, step1, step2):
+    #                     print >> sys.stderr, "That was good. Going there."
+    #                     return append_destinations(step1, step2, (x, y), destinations)
+    #
+    #     print >> sys.stderr, "Area (", x, ",", y, ") - ", step1, " - ", step2, " is not free. Reducing size to ", size
+    #
+    # return append_destinations(step1, step2, (x, y), destinations)
 
 
 def append_destinations(step1, step2, step3, destinations):
@@ -442,7 +452,7 @@ def next_dests(x, y, opps, destinations):
     # se ci sono due opps alla stessa distanza, prendo un random
 
     # super conservative size: it takes care of an opponent going straight to us
-    size = max(3, distance / 8)
+    size = max(3, distance / 4)
     return find_new_area(x, y, closest_opponent, size, destinations)
 
 
