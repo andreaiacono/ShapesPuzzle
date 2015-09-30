@@ -3,13 +3,36 @@ import math
 import puzzle
 from wx.lib.colourdb import getColourList
 from random import randint
-import solver
 
 
 class GeometricPuzzleFrame(wx.Frame):
     def __init__(self):
+        wx.Frame.__init__(self, parent=None, id=-1, title="Geometric Puzzle Solver", pos=wx.DefaultPosition,
+                          size=wx.Size(700, 600))
+        wx.EVT_CLOSE(self, self.on_quit)
+        self.Bind(wx.EVT_PAINT, self.on_paint)
+        wx.EVT_SIZE(self, self.on_size)
+        menu_bar = wx.MenuBar()
+        file_menu = wx.Menu()
+
+        id_quit = wx.NewId()
+        file_menu.Append(id_quit, "&Quit", "Quit Solver")
+        wx.EVT_MENU(self, id_quit, self.on_quit)
+
+        menu_bar.Append(file_menu, "&File")
+
+        menu_about = wx.Menu()
+
+        id_info = wx.NewId()
+        menu_about.Append(id_info, "&Info", "Shows info")
+        wx.EVT_MENU(self, id_info, self.on_info)
+
+        menu_bar.Append(menu_about, "&About")
 
         self.puzzle = puzzle.Puzzle("../models/default.model")
+        self.SetMenuBar(menu_bar)
+        self.CreateStatusBar()
+        self.SetStatusText("Ready")
 
         self.box_width = 0
         self.box_height = 0
@@ -22,54 +45,6 @@ class GeometricPuzzleFrame(wx.Frame):
         self.top = 0
         self.border = 0
         self.vertices = []
-
-        self.solver = solver.Solver(self.puzzle)
-
-        wx.Frame.__init__(self, parent=None, id=-1, title="Geometric Puzzle Solver", pos=wx.DefaultPosition,
-                          size=wx.Size(700, 600))
-        wx.EVT_CLOSE(self, self.on_quit)
-        self.Bind(wx.EVT_PAINT, self.on_paint)
-        wx.EVT_SIZE(self, self.on_size)
-        menu_bar = wx.MenuBar()
-        file_menu = wx.Menu()
-
-        id_open = wx.NewId()
-        file_menu.Append(id_open, "&Open", "Open model")
-        wx.EVT_MENU(self, id_open, self.loadFile)
-
-        id_quit = wx.NewId()
-        file_menu.Append(id_quit, "&Quit", "Quit Solver")
-        wx.EVT_MENU(self, id_quit, self.on_quit)
-
-        menu_bar.Append(file_menu, "&File")
-
-        solve_menu = wx.Menu()
-        id_solve = wx.NewId()
-        solve_menu.Append(id_solve, "&Next solution", "Next solution")
-        wx.EVT_MENU(self, id_solve, self.next_solution)
-        menu_bar.Append(solve_menu, "&Solve")
-
-        menu_about = wx.Menu()
-        id_info = wx.NewId()
-        menu_about.Append(id_info, "&Info", "Shows info")
-        wx.EVT_MENU(self, id_info, self.on_info)
-
-        menu_bar.Append(menu_about, "&About")
-
-        self.SetMenuBar(menu_bar)
-        self.CreateStatusBar()
-        self.SetStatusText("Ready")
-
-    def loadFile(self, event):
-        openFileDialog = wx.FileDialog(self, "Open", "", "", "Python files (*.model)|*.model", wx.FD_OPEN | wx.FD_FILE_MUST_EXIST)
-        openFileDialog.ShowModal()
-        filename = openFileDialog.GetPath()
-        openFileDialog.Destroy()
-        self.puzzle = puzzle.Puzzle(filename)
-        self.refresh_window()
-
-    def next_solution(self, event):
-        self.solver.next()
 
     def on_quit(self, event):
         self.Destroy()
