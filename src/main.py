@@ -1,10 +1,6 @@
 import wx
-import math
 import puzzle
-from wx.lib.colourdb import getColourList
-from random import randint
 import solver
-
 
 class GeometricPuzzleFrame(wx.Frame):
     def __init__(self):
@@ -26,7 +22,7 @@ class GeometricPuzzleFrame(wx.Frame):
         self.solver = solver.Solver(self.puzzle)
 
         wx.Frame.__init__(self, parent=None, id=-1, title="Geometric Puzzle Solver", pos=wx.DefaultPosition,
-                          size=wx.Size(700, 600))
+                          size=wx.Size(320, 320))
         wx.EVT_CLOSE(self, self.on_quit)
         self.Bind(wx.EVT_PAINT, self.on_paint)
         wx.EVT_SIZE(self, self.on_size)
@@ -59,6 +55,29 @@ class GeometricPuzzleFrame(wx.Frame):
         self.SetMenuBar(menu_bar)
         self.CreateStatusBar()
         self.SetStatusText("Ready")
+
+        self.colors = [
+            wx.Brush((255, 0, 0)),
+            wx.Brush((0, 255, 0)),
+            wx.Brush((0, 0, 255)),
+            wx.Brush((255, 255, 0)),
+            wx.Brush((0, 255, 255)),
+            wx.Brush((255, 0, 255)),
+            wx.Brush((192, 192, 192)),
+            wx.Brush((128, 0, 0)),
+            wx.Brush((128, 128, 0)),
+            wx.Brush((0, 128, 0)),
+            wx.Brush((128, 0, 128)),
+            wx.Brush((0, 128, 128)),
+            wx.Brush((0, 0, 128)),
+            wx.Brush((128, 128, 128)),
+            wx.Brush((255, 69, 0)),
+            wx.Brush((144, 238, 144)),
+            wx.Brush((255, 192, 203)),
+            wx.Brush((255, 250, 205)),
+            wx.Brush((139, 69, 19)),
+            wx.Brush((230, 230, 250))
+        ]
 
     def loadFile(self, event):
         openFileDialog = wx.FileDialog(self, "Open", "", "", "Python files (*.model)|*.model", wx.FD_OPEN | wx.FD_FILE_MUST_EXIST)
@@ -102,8 +121,8 @@ class GeometricPuzzleFrame(wx.Frame):
         model = puzzle.get_model()
         for row in range(len(model)):
             for col in range(len(model[row])):
-                color_index = puzzle.get_color_index(model[row][col]) * 21
-                dc.SetBrush(wx.Brush(getColourList()[color_index]))
+                color_index = puzzle.get_color_index(model[row][col]) % len(self.colors)
+                dc.SetBrush(self.colors[color_index])
                 dc.DrawRectangle(self.left + row * self.grid_size, self.top + col * self.grid_size, self.grid_size, self.grid_size)
                 # dc.DrawLines(self.vertices)
 
@@ -143,7 +162,7 @@ class GeometricPuzzleFrame(wx.Frame):
 
     def on_info(self, event):
 
-        licence = """GeometricPuzzle is free software; you can redistribute
+        licence = """ShapesPuzzle is free software; you can redistribute
 it and/or modify it under the terms of the GNU General Public License as 
 published by the Free Software Foundation; either version 2 of the License, 
 or (at your option) any later version.
@@ -164,7 +183,7 @@ Suite 330, Boston, MA  02111-1307  USA"""
         info.SetVersion('1.0')
         info.SetDescription("GeometricPuzzles is a solver for geometric puzzles.")
         info.SetCopyright('Written by Andrea Iacono')
-        info.SetWebSite('http://www.github.com/andreaiacono/GeometricPuzzle')
+        info.SetWebSite('http://www.github.com/andreaiacono/ShapesPuzzle')
         info.SetLicence(licence)
         info.AddDeveloper('Andrea Iacono')
         info.AddDocWriter('Andrea Iacono')

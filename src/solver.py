@@ -9,7 +9,7 @@ class Solver:
         self.unused_pieces = list(self.puzzle.pieces)
 
     def next(self):
-        matrix = [['' for j in range(puzzle.rows)] for i in range(puzzle.cols)]
+        matrix = [['' for j in range(self.puzzle.rows)] for i in range(self.puzzle.cols)]
         starting_position = (0,0)
         used_pieces = []
         unused_pieces = list(self.used_pieces)
